@@ -7,7 +7,8 @@
 #include <frc/smartdashboard/SmartDashboard.h>
 
 SwerveSubsystem::SwerveSubsystem() 
-    : odometry{kinematics, frc::Rotation2d(0_deg), frc::Pose2d()}
+    : odometry{kinematics, frc::Rotation2d(0_deg), frc::Pose2d()},
+      logger{spdlog::get("Swerve")}
 {
     gyro.Calibrate();
     gyro.ZeroYaw();
@@ -15,6 +16,7 @@ SwerveSubsystem::SwerveSubsystem()
     ResetOdom(frc::Pose2d(), frc::Rotation2d(0_deg));
     frc::SmartDashboard::PutData("Pose Field", &poseField);
     frc::SmartDashboard::PutData("Odom Field", &odomField);
+    logger->info("Subsystem constructor done");
 }
 
 void SwerveSubsystem::Drive(units::meters_per_second_t xSpeed, units::meters_per_second_t ySpeed, units::radians_per_second_t rotSpeed, bool fieldRelative) {

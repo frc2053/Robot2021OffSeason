@@ -8,6 +8,7 @@
 #include <frc2/command/Command.h>
 
 #include "RobotContainer.h"
+#include "tigertronics/Logger.h"
 
 class Robot : public frc::TimedRobot {
  public:
@@ -26,5 +27,6 @@ class Robot : public frc::TimedRobot {
   // doesn't have undefined behavior and potentially crash.
   frc2::Command* m_autonomousCommand = nullptr;
 
+  Logger logger;
   RobotContainer m_container;
 };

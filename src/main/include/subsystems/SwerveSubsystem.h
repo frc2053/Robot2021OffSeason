@@ -13,6 +13,7 @@
 #include <frc/geometry/Translation2d.h>
 #include <frc/SlewRateLimiter.h>
 #include "tigertronics/SwerveModule.h"
+#include <spdlog/spdlog.h>
 
 class SwerveSubsystem : public frc2::SubsystemBase {
 public:
@@ -63,4 +64,6 @@ private:
     frc::SlewRateLimiter<units::scalar> xSpeedLimiter{constants::controller_info::JOYSTICK_RATE_LIMITER};
     frc::SlewRateLimiter<units::scalar> ySpeedLimiter{constants::controller_info::JOYSTICK_RATE_LIMITER};
     frc::SlewRateLimiter<units::scalar> rotSpeedLimiter{constants::controller_info::JOYSTICK_RATE_LIMITER};
+
+    std::shared_ptr<spdlog::logger> logger;
 };

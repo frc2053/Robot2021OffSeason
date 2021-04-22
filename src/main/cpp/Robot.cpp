@@ -5,12 +5,9 @@
 #include "Robot.h"
 
 #include <frc2/command/CommandScheduler.h>
-#include <fmt/core.h>
-#include <spdlog/spdlog.h>
 
 void Robot::RobotInit() {
-  fmt::print("Hello, world!\n");
-  spdlog::info("Welcome to spdlog!");
+  spdlog::get("Robot")->info("Init");
 }
 
 /**
@@ -30,7 +27,10 @@ void Robot::RobotPeriodic() {
  * can use it to reset any subsystem information you want to clear when the
  * robot is disabled.
  */
-void Robot::DisabledInit() {}
+void Robot::DisabledInit() {
+  spdlog::get("Robot")->info("Disabled");
+  spdlog::get("Robot")->flush();
+}
 
 void Robot::DisabledPeriodic() {}
 
@@ -39,6 +39,8 @@ void Robot::DisabledPeriodic() {}
  * RobotContainer} class.
  */
 void Robot::AutonomousInit() {
+  spdlog::get("Robot")->info("Auto Init");
+
   m_autonomousCommand = m_container.GetAutonomousCommand();
 
   if (m_autonomousCommand != nullptr) {
@@ -49,6 +51,7 @@ void Robot::AutonomousInit() {
 void Robot::AutonomousPeriodic() {}
 
 void Robot::TeleopInit() {
+  spdlog::get("Robot")->info("Teleop Init");
   // This makes sure that the autonomous stops running when
   // teleop starts running. If you want the autonomous to
   // continue until interrupted by another command, remove
