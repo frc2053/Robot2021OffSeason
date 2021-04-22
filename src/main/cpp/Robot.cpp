@@ -6,8 +6,11 @@
 
 #include <frc/smartdashboard/SmartDashboard.h>
 #include <frc2/command/CommandScheduler.h>
+#include <fmt/core.h>
 
-void Robot::RobotInit() {}
+void Robot::RobotInit() {
+  fmt::print("Hello, world!\n");
+}
 
 /**
  * This function is called every robot packet, no matter the mode. Use

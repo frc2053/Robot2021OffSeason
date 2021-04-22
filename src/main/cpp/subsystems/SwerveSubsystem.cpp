@@ -18,11 +18,6 @@ SwerveSubsystem::SwerveSubsystem()
 }
 
 void SwerveSubsystem::Drive(units::meters_per_second_t xSpeed, units::meters_per_second_t ySpeed, units::radians_per_second_t rotSpeed, bool fieldRelative) {
-
-    frc::SmartDashboard::PutNumber("XSpeed", xSpeed.to<double>());
-    frc::SmartDashboard::PutNumber("YSpeed", ySpeed.to<double>());
-    frc::SmartDashboard::PutNumber("RotSpeed", rotSpeed.to<double>());
-
     auto states = kinematics.ToSwerveModuleStates(
         fieldRelative ? frc::ChassisSpeeds::FromFieldRelativeSpeeds(xSpeed, ySpeed, rotSpeed, GetGyroAngle()) :
                         frc::ChassisSpeeds{xSpeed, ySpeed, rotSpeed}

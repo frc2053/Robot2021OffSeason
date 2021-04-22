@@ -69,8 +69,6 @@ frc::SwerveModuleState SwerveModule::GetState() {
 void SwerveModule::SetDesiredState(const frc::SwerveModuleState& desiredState) {
     const auto state = frc::SwerveModuleState::Optimize(desiredState, GetState().angle);
 
-    frc::SmartDashboard::PutNumber(moduleName + " state angle", state.angle.Degrees().to<double>());
-
     driveMotor.Set(
         ctre::phoenix::motorcontrol::ControlMode::Velocity, 
         Util::ConvertAngularVelocityToTicksPer100Ms(
@@ -103,8 +101,6 @@ void SwerveModule::SimulationPeriodic() {
 
     double turnMotorVoltage = turningMotor.GetMotorOutputVoltage();
 
-    frc::SmartDashboard::PutNumber(moduleName + " voltage", turnMotorVoltage);
-
     turningMotorSim.SetInputVoltage(units::volt_t{turnMotorVoltage});
     driveMotorSim.SetInputVoltage(units::volt_t{driveMotor.GetMotorOutputVoltage()});
     
@@ -125,12 +121,6 @@ void SwerveModule::SimulationPeriodic() {
             constants::encoder_info::CTRE_ENCODER_CPR,
             constants::physical_constants::SWERVE_TURNING_MOTOR_GEARING
         );
-
-    frc::SmartDashboard::PutNumber(moduleName + " angle", angle.to<double>());
-    frc::SmartDashboard::PutNumber(moduleName + " tick pos", turningTicks);
-
-    frc::SmartDashboard::PutNumber(moduleName + " vel", vel.to<double>());
-    frc::SmartDashboard::PutNumber(moduleName + " tick vel", turningVelTicks);
 
     turningMotor.GetSimCollection().SetQuadratureRawPosition(
         turningTicks
