@@ -1,6 +1,5 @@
 #include "tigertronics/SwerveModule.h"
 #include "tigertronics/Util.h"
-#include <frc/smartdashboard/SmartDashboard.h>
 
 SwerveModule::SwerveModule(int driveMotorCanId, int turningMotorCanId, int calibrationValue, std::string name) 
     : driveMotor(driveMotorCanId),

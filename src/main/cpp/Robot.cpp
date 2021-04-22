@@ -4,12 +4,13 @@
 
 #include "Robot.h"
 
-#include <frc/smartdashboard/SmartDashboard.h>
 #include <frc2/command/CommandScheduler.h>
 #include <fmt/core.h>
+#include <spdlog/spdlog.h>
 
 void Robot::RobotInit() {
   fmt::print("Hello, world!\n");
+  spdlog::info("Welcome to spdlog!");
 }
 
 /**
