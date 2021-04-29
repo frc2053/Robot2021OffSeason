@@ -1,8 +1,6 @@
 #include <gtest/gtest.h>
 #include "tigertronics/Util.h"
 
-constexpr double DELTA = 1e-2;
-
 class UnitConversionTests : public testing::Test {
 protected:
     int encoderTicksPerRev = 4096;
@@ -10,7 +8,7 @@ protected:
 
 TEST_F(UnitConversionTests, TicksToDistZero) {
     units::meter_t actual = Util::ConvertEncoderTicksToDistance(0, encoderTicksPerRev, 1.0, .5_m);
-    EXPECT_EQ(0, actual.to<double>(), DELTA);
+    EXPECT_DOUBLE_EQ(0, actual.to<double>());
 };
 
 //If the wheel has rotated one time, we have traveled its circumference
@@ -83,21 +81,88 @@ TEST_F(UnitConversionTests, TickSpeedToAngleSpeedNegative) {
 };
 
 TEST_F(UnitConversionTests, DistanceToTicksZero) {
-    int actual = Util::ConvertDistanceToEncoderTicks(0_m, encoderTicksPerRev, 1.0, .5_m);
-    EXPECT_EQ(0, actual);
+    double actual = Util::ConvertDistanceToEncoderTicks(0_m, encoderTicksPerRev, 1.0, .5_m);
+    EXPECT_DOUBLE_EQ(0, actual);
 };
 
 TEST_F(UnitConversionTests, DistanceToTicksSimple) {
-    int actual = Util::ConvertDistanceToEncoderTicks(wpi::math::pi * 1_m, encoderTicksPerRev, 1.0, .5_m);
-    EXPECT_EQ(encoderTicksPerRev, actual);
+    double actual = Util::ConvertDistanceToEncoderTicks(wpi::math::pi * 1_m, encoderTicksPerRev, 1.0, .5_m);
+    EXPECT_DOUBLE_EQ(encoderTicksPerRev, actual);
 };
 
 TEST_F(UnitConversionTests, DistanceToTicksGearing) {
-    int actual = Util::ConvertDistanceToEncoderTicks(wpi::math::pi * 1_m, encoderTicksPerRev, 1.0/2.0, .5_m);
-    EXPECT_EQ(encoderTicksPerRev / 2, actual);
+    double actual = Util::ConvertDistanceToEncoderTicks(wpi::math::pi * 1_m, encoderTicksPerRev, 1.0/2.0, .5_m);
+    EXPECT_DOUBLE_EQ(encoderTicksPerRev / 2, actual);
 };
 
 TEST_F(UnitConversionTests, DistanceToTicksComplex) {
-    int actual = Util::ConvertDistanceToEncoderTicks(-wpi::math::pi * 1_m, encoderTicksPerRev, 2/1, .5_m);
-    EXPECT_EQ(-encoderTicksPerRev * 2, actual);
+    double actual = Util::ConvertDistanceToEncoderTicks(-wpi::math::pi * 1_m, encoderTicksPerRev, 2/1, .5_m);
+    EXPECT_DOUBLE_EQ(-encoderTicksPerRev * 2, actual);
+};
+
+TEST_F(UnitConversionTests, VelocityToTicksZero) {
+    double actual = Util::ConvertAngularVelocityToTicksPer100Ms(0_rad_per_s, encoderTicksPerRev, 1.0);
+    EXPECT_DOUBLE_EQ(0, actual);
+};
+
+//divide by ten because ticks per 1s / 10 = 100ms
+TEST_F(UnitConversionTests, VelocityToTicksSimple) {
+    double actual = Util::ConvertAngularVelocityToTicksPer100Ms(2 * wpi::math::pi * 1_rad_per_s, encoderTicksPerRev, 1.0);
+    EXPECT_DOUBLE_EQ(encoderTicksPerRev / 10.0, actual);
+};
+
+//divide by ten because ticks per 1s / 10 = 100ms
+TEST_F(UnitConversionTests, VelocityToTicksGear) {
+    double actual = Util::ConvertAngularVelocityToTicksPer100Ms(2 * wpi::math::pi * 1_rad_per_s, encoderTicksPerRev, 10);
+    EXPECT_DOUBLE_EQ(encoderTicksPerRev, actual);
+};
+
+TEST_F(UnitConversionTests, VelocityToTicksComplex) {
+    double actual = Util::ConvertAngularVelocityToTicksPer100Ms(-2 * wpi::math::pi * 1_rad_per_s, encoderTicksPerRev, 1.0/2.0);
+    EXPECT_DOUBLE_EQ((-encoderTicksPerRev / 2.0) / 10.0, actual);
+};
+
+TEST_F(UnitConversionTests, AngleToTicksZero) {
+    double actual = Util::ConvertAngleToEncoderTicks(0_rad, encoderTicksPerRev, 1.0);
+    EXPECT_DOUBLE_EQ(0, actual);
+};
+
+TEST_F(UnitConversionTests, AngleToTicksSimple) {
+    double actual = Util::ConvertAngleToEncoderTicks(wpi::math::pi * 1_rad, encoderTicksPerRev, 1.0);
+    EXPECT_DOUBLE_EQ(encoderTicksPerRev / 2, actual);
+};
+
+TEST_F(UnitConversionTests, AngleToTicksNegative) {
+    double actual = Util::ConvertAngleToEncoderTicks((-wpi::math::pi / 2) * 1_rad, encoderTicksPerRev, 1.0);
+    EXPECT_DOUBLE_EQ(-encoderTicksPerRev / 4, actual);
+};
+
+TEST_F(UnitConversionTests, LinearToAngularVelZero) {
+    units::radians_per_second_t actual = Util::ConvertLinearVelocityToAngularVelocity(0_mps, 1_m);
+    EXPECT_DOUBLE_EQ(0, actual.to<double>());
+};
+
+TEST_F(UnitConversionTests, LinearToAngularVelSimple) {
+    units::radians_per_second_t actual = Util::ConvertLinearVelocityToAngularVelocity(5_mps, 2_m);
+    EXPECT_DOUBLE_EQ(2.5, actual.to<double>());
+};
+
+TEST_F(UnitConversionTests, LinearToAngularVelNegative) {
+    units::radians_per_second_t actual = Util::ConvertLinearVelocityToAngularVelocity(-10_mps, 1_m);
+    EXPECT_DOUBLE_EQ(-10, actual.to<double>());
+};
+
+TEST_F(UnitConversionTests, AngularToLinearVelZero) {
+    units::meters_per_second_t actual = Util::ConvertAngularVelocityToLinearVelocity(0_rad_per_s, 1_m);
+    EXPECT_DOUBLE_EQ(0, actual.to<double>());
+};
+
+TEST_F(UnitConversionTests, AngularToLinearVelSimple) {
+    units::meters_per_second_t actual = Util::ConvertAngularVelocityToLinearVelocity(5_rad_per_s, 2_m);
+    EXPECT_DOUBLE_EQ(10, actual.to<double>());
+};
+
+TEST_F(UnitConversionTests, AngularToLinearVelNegative) {
+    units::meters_per_second_t actual = Util::ConvertAngularVelocityToLinearVelocity(-10_rad_per_s, 1_m);
+    EXPECT_DOUBLE_EQ(-10, actual.to<double>());
 };
