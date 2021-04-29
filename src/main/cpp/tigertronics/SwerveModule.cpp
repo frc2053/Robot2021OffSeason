@@ -70,18 +70,16 @@ void SwerveModule::SetDesiredState(const frc::SwerveModuleState& desiredState) {
 
     driveMotor.Set(
         ctre::phoenix::motorcontrol::ControlMode::Velocity, 
-        Util::ConvertAngularVelocityToTicksPer100Ms(
-            Util::ConvertLinearVelocityToAngularVelocity(
-                state.speed,
-                constants::physical_constants::SWERVE_DRIVE_WHEEL_RADIUS
-            ),
+        ConvertSwerveModuleSpeedToTalonTickVel(
+            state.speed, 
+            constants::physical_constants::SWERVE_DRIVE_WHEEL_RADIUS,
             constants::encoder_info::CTRE_ENCODER_CPR,
             constants::physical_constants::SWERVE_DRIVE_MOTOR_GEARING
         )
     );
     turningMotor.Set(
         ctre::phoenix::motorcontrol::ControlMode::Position,
-        Util::ConvertAngleToEncoderTicks(
+        ConvertSwerveModuleAngleToTalonTicks(
             state.angle.Radians(),
             constants::encoder_info::CTRE_ENCODER_CPR,
             constants::physical_constants::SWERVE_TURNING_MOTOR_GEARING
@@ -94,6 +92,25 @@ void SwerveModule::ResetEncoders() {
     driveMotor.GetSimCollection().SetQuadratureRawPosition(0);
     turningMotor.SetSelectedSensorPosition(0);
     driveMotor.SetSelectedSensorPosition(0);
+}
+
+double SwerveModule::ConvertSwerveModuleSpeedToTalonTickVel(units::meters_per_second_t speed, units::meter_t wheelRadius, int encoderCPR, double gearing) {
+    return Util::ConvertAngularVelocityToTicksPer100Ms(
+        Util::ConvertLinearVelocityToAngularVelocity(
+            speed,
+            wheelRadius
+        ),
+        encoderCPR,
+        gearing
+    );
+}
+
+double SwerveModule::ConvertSwerveModuleAngleToTalonTicks(units::radian_t angle, int encoderCPR, double gearing) {
+    return Util::ConvertAngleToEncoderTicks(
+        angle,
+        encoderCPR,
+        gearing
+    );
 }
 
 void SwerveModule::SimulationPeriodic() {

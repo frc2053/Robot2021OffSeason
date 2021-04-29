@@ -16,8 +16,9 @@ public:
     void SetDesiredState(const frc::SwerveModuleState& desiredState);
     void SimulationPeriodic();
     void ResetEncoders();
+    static double ConvertSwerveModuleSpeedToTalonTickVel(units::meters_per_second_t speed, units::meter_t wheelRadius, int encoderCPR, double gearing);
+    static double ConvertSwerveModuleAngleToTalonTicks(units::radian_t angle, int encoderCPR, double gearing);
 private:
-
     void ConfigureTurningMotor();
     void ConfigureDriveMotor();
 
