@@ -5,6 +5,8 @@
 #include <units/angular_velocity.h>
 #include <units/angle.h>
 #include <wpi/math>
+#include <frc/MathUtil.h>
+#include <iostream>
 
 class Util {
 public:
@@ -12,10 +14,11 @@ public:
         return units::meter_t((ticks / (encoderResolution * gearing)) * (2 * wpi::math::pi * wheelRadius));
     };
     static units::radians_per_second_t ConvertTicksPer100MsToAngularVelocity(int ticksPer100Ms, int encoderResolution, double gearing) {
-        return units::radians_per_second_t(ConvertTicksToAngle(ticksPer100Ms, encoderResolution, gearing).to<double>() * 10);
+        return units::radians_per_second_t(ConvertTicksToAngle(ticksPer100Ms, encoderResolution, gearing, false).to<double>() * 10);
     };
-    static units::radian_t ConvertTicksToAngle(int ticks, int encoderResolution, double gearing) {
-        return units::radian_t((ticks / (encoderResolution * gearing)) * (2 * wpi::math::pi));
+    static units::radian_t ConvertTicksToAngle(int ticks, int encoderResolution, double gearing, bool wrap=true) {
+        auto retVal = units::radian_t((ticks / (encoderResolution * gearing)) * (2 * wpi::math::pi));
+        return wrap ? frc::AngleModulus(retVal) : retVal;
     };
     static int ConvertDistanceToEncoderTicks(units::meter_t distance, int encoderResolution, double gearing, units::meter_t wheelRadius) {
         return distance * (encoderResolution * gearing) / (wpi::math::pi * 2 * wheelRadius);
