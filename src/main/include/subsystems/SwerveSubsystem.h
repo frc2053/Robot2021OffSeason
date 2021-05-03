@@ -33,10 +33,10 @@ private:
     frc::Translation2d backLeftModuleLocation{-halfLength, halfWidth};
     frc::Translation2d backRightModuleLocation{-halfLength, -halfWidth};
 
-    SwerveModule frontLeftModule{constants::can_ids::FL_SWERVE_DRIVE_ID, constants::can_ids::FL_SWERVE_ROT_ID, constants::drivetrain_motor_config::FL_SWERVE_TURN_MOTOR_CALIBRATION_VALUE, "FL"};
-    SwerveModule frontRightModule{constants::can_ids::FR_SWERVE_DRIVE_ID, constants::can_ids::FR_SWERVE_ROT_ID, constants::drivetrain_motor_config::FR_SWERVE_TURN_MOTOR_CALIBRATION_VALUE, "FR"};
-    SwerveModule backLeftModule{constants::can_ids::BL_SWERVE_DRIVE_ID, constants::can_ids::BL_SWERVE_ROT_ID, constants::drivetrain_motor_config::BL_SWERVE_TURN_MOTOR_CALIBRATION_VALUE, "BL"};
-    SwerveModule backRightModule{constants::can_ids::BR_SWERVE_DRIVE_ID, constants::can_ids::BR_SWERVE_ROT_ID, constants::drivetrain_motor_config::BR_SWERVE_TURN_MOTOR_CALIBRATION_VALUE, "BR"};
+    std::unique_ptr<SwerveModule> frontLeftModule;
+    std::unique_ptr<SwerveModule> frontRightModule;
+    std::unique_ptr<SwerveModule> backLeftModule;
+    std::unique_ptr<SwerveModule> backRightModule;
 
     frc::SwerveDriveKinematics<4> kinematics{
         frontLeftModuleLocation,

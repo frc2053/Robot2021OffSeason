@@ -8,8 +8,12 @@
 #include <frc/system/plant/LinearSystemId.h>
 #include "Constants.h"
 #include <string>
+#include <spdlog/spdlog.h>
+#include <frc/smartdashboard/Sendable.h>
+#include <frc/smartdashboard/SendableHelper.h>
 
-class SwerveModule {
+class SwerveModule : public frc::Sendable,
+                     public frc::SendableHelper<SwerveModule> {
 public:
     SwerveModule(int driveMotorCanId, int turningMotorCanId, int calibrationValue, std::string name);
     frc::SwerveModuleState GetState();
@@ -18,6 +22,7 @@ public:
     void ResetEncoders();
     static double ConvertSwerveModuleSpeedToTalonTickVel(units::meters_per_second_t speed, units::meter_t wheelRadius, int encoderCPR, double gearing);
     static double ConvertSwerveModuleAngleToTalonTicks(units::radian_t angle, int encoderCPR, double gearing);
+    void InitSendable(frc::SendableBuilder& builder) override;
 private:
     void ConfigureTurningMotor();
     void ConfigureDriveMotor();
@@ -48,4 +53,8 @@ private:
         .5_kg,
         false
     };
+
+    std::shared_ptr<spdlog::logger> logger;
+    //please dont use
+    frc::SwerveModuleState currentSimState;
 };

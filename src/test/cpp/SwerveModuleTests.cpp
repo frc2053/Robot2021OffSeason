@@ -15,3 +15,10 @@ TEST_F(SwerveModuleTests, SwerveStateZero) {
     EXPECT_DOUBLE_EQ(0, actualAngle);
     EXPECT_DOUBLE_EQ(0, actualSpeed);
 };
+
+TEST_F(SwerveModuleTests, SwerveStateSimple) {
+    double actualAngle = SwerveModule::ConvertSwerveModuleAngleToTalonTicks(45_deg, encoderTicksPerRev, gearing);
+    double actualSpeed = SwerveModule::ConvertSwerveModuleSpeedToTalonTickVel(wpi::math::pi * 1_mps * 2, wheelRadius, encoderTicksPerRev, gearing);
+    EXPECT_DOUBLE_EQ(512, actualAngle);
+    EXPECT_DOUBLE_EQ(409.6, actualSpeed);
+};

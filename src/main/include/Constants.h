@@ -21,7 +21,7 @@
 namespace constants {
     namespace physical_constants {
         double constexpr SWERVE_DRIVE_MOTOR_GEARING = 7.11 / 1;
-        double constexpr SWERVE_TURNING_MOTOR_GEARING = 1 / 1;
+        double constexpr SWERVE_TURNING_MOTOR_GEARING = 1.0 / 1;
         units::meter_t constexpr SWERVE_DRIVE_WHEEL_RADIUS = 3_in;
         units::meter_t constexpr DRIVEBASE_LENGTH = 22_in;
         units::meter_t constexpr DRIVEBASE_WIDTH = 22_in;
@@ -32,7 +32,7 @@ namespace constants {
     namespace controller_info {
         int constexpr DRIVER_PORT = 0;
         int constexpr OPERATOR_PORT = 1;
-        auto constexpr JOYSTICK_RATE_LIMITER = 3 / 1_s;
+        auto constexpr JOYSTICK_RATE_LIMITER = 200 / 1_s;
     }
 
     namespace drivetrain_characterization {

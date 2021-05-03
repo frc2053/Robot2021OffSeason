@@ -12,7 +12,7 @@ RobotContainer::RobotContainer() : m_autonomousCommand(&swerveSubsystem) {
     // Configure the button bindings
     ConfigureButtonBindings();
 
-    swerveSubsystem.SetDefaultCommand(frc2::RunCommand(
+    auto teleopDriveCmd = frc2::RunCommand(
         [this] {
             swerveSubsystem.DriveWithJoystick(
                 driverController.GetY(frc::GenericHID::kLeftHand),
@@ -22,7 +22,10 @@ RobotContainer::RobotContainer() : m_autonomousCommand(&swerveSubsystem) {
             );
         },
         {&swerveSubsystem}
-    ));
+    );
+    teleopDriveCmd.SetName("TeleopDriveCommand");
+
+    swerveSubsystem.SetDefaultCommand(teleopDriveCmd);
 }
 
 void RobotContainer::ConfigureButtonBindings() {

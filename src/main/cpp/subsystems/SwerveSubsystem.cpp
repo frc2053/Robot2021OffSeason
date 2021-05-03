@@ -7,9 +7,20 @@
 #include <frc/smartdashboard/SmartDashboard.h>
 
 SwerveSubsystem::SwerveSubsystem() 
-    : odometry{kinematics, frc::Rotation2d(0_deg), frc::Pose2d()},
+    : frontLeftModule{std::make_unique<SwerveModule>(constants::can_ids::FL_SWERVE_DRIVE_ID, constants::can_ids::FL_SWERVE_ROT_ID, constants::drivetrain_motor_config::FL_SWERVE_TURN_MOTOR_CALIBRATION_VALUE, "FL")},
+      frontRightModule{std::make_unique<SwerveModule>(constants::can_ids::FR_SWERVE_DRIVE_ID, constants::can_ids::FR_SWERVE_ROT_ID, constants::drivetrain_motor_config::FR_SWERVE_TURN_MOTOR_CALIBRATION_VALUE, "FR")},
+      backLeftModule{std::make_unique<SwerveModule>(constants::can_ids::BL_SWERVE_DRIVE_ID, constants::can_ids::BL_SWERVE_ROT_ID, constants::drivetrain_motor_config::BL_SWERVE_TURN_MOTOR_CALIBRATION_VALUE, "BL")},
+      backRightModule{std::make_unique<SwerveModule>(constants::can_ids::BR_SWERVE_DRIVE_ID, constants::can_ids::BR_SWERVE_ROT_ID, constants::drivetrain_motor_config::BR_SWERVE_TURN_MOTOR_CALIBRATION_VALUE, "BR")},
+      odometry{kinematics, frc::Rotation2d(0_deg), frc::Pose2d()},
       logger{spdlog::get("Swerve")}
 {
+    SetName("SwerveSubsystem");
+    SetSubsystem("SwerveSubsystem");
+    AddChild("Front Left Module", frontLeftModule.get());
+    AddChild("Front Right Module", frontRightModule.get());
+    AddChild("Back Left Module", backLeftModule.get());
+    AddChild("Back Right Module", backRightModule.get());
+
     gyro.Calibrate();
     gyro.ZeroYaw();
 
@@ -29,10 +40,15 @@ void SwerveSubsystem::Drive(units::meters_per_second_t xSpeed, units::meters_per
 
     auto [fl, fr, bl, br] = states;
 
-    frontLeftModule.SetDesiredState(fl);
-    frontRightModule.SetDesiredState(fr);
-    backLeftModule.SetDesiredState(bl);
-    backRightModule.SetDesiredState(br);
+    logger->info("fl[{:.2f},{:.2f}]",
+        fl.angle.Degrees().to<double>(),
+        fl.speed.to<double>()
+    );
+
+    frontLeftModule->SetDesiredState(fl);
+    frontRightModule->SetDesiredState(fr);
+    backLeftModule->SetDesiredState(bl);
+    backRightModule->SetDesiredState(br);
 }
 
 void SwerveSubsystem::DriveWithJoystick(double x, double y, double rot, bool fieldRelative) {
@@ -51,26 +67,26 @@ frc::Rotation2d SwerveSubsystem::GetGyroAngle() {
 }
 
 void SwerveSubsystem::ResetOdom(const frc::Pose2d& pose, const frc::Rotation2d& rot) {
-    frontLeftModule.ResetEncoders();
-    frontRightModule.ResetEncoders();
-    backLeftModule.ResetEncoders();
-    backRightModule.ResetEncoders();
+    frontLeftModule->ResetEncoders();
+    frontRightModule->ResetEncoders();
+    backLeftModule->ResetEncoders();
+    backRightModule->ResetEncoders();
     poseEstimator.ResetPosition(pose, rot);
     odometry.ResetPosition(pose, rot);
 }
 
 void SwerveSubsystem::UpdateOdometry() {
-    odometry.Update(GetGyroAngle(), frontLeftModule.GetState(), frontRightModule.GetState(), backLeftModule.GetState(), backRightModule.GetState());
-    poseEstimator.Update(GetGyroAngle(), frontLeftModule.GetState(), frontRightModule.GetState(), backLeftModule.GetState(), backRightModule.GetState());
+    odometry.Update(GetGyroAngle(), frontLeftModule->GetState(), frontRightModule->GetState(), backLeftModule->GetState(), backRightModule->GetState());
+    poseEstimator.Update(GetGyroAngle(), frontLeftModule->GetState(), frontRightModule->GetState(), backLeftModule->GetState(), backRightModule->GetState());
     poseField.SetRobotPose(poseEstimator.GetEstimatedPosition());
     odomField.SetRobotPose(odometry.GetPose());
 }
 
 void SwerveSubsystem::SimulationPeriodic() {
-    frontLeftModule.SimulationPeriodic();
-    frontRightModule.SimulationPeriodic();
-    backLeftModule.SimulationPeriodic();
-    backRightModule.SimulationPeriodic();
+    frontLeftModule->SimulationPeriodic();
+    frontRightModule->SimulationPeriodic();
+    backLeftModule->SimulationPeriodic();
+    backRightModule->SimulationPeriodic();
 
     HAL_SimDeviceHandle gyroSimHandle = HALSIM_GetSimDeviceHandle("navX-Sensor[4]");
     hal::SimDouble angle = HALSIM_GetSimValueHandle(gyroSimHandle, "Yaw");

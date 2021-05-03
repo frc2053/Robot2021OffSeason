@@ -1,12 +1,15 @@
 #include "tigertronics/SwerveModule.h"
 #include "tigertronics/Util.h"
+#include "frc/smartdashboard/SmartDashboard.h"
 
 SwerveModule::SwerveModule(int driveMotorCanId, int turningMotorCanId, int calibrationValue, std::string name) 
     : driveMotor(driveMotorCanId),
       turningMotor(turningMotorCanId),
       turningMotorOffsetTicks(calibrationValue),
-      moduleName(name) {
+      moduleName(name),
+      logger{spdlog::get("Swerve")} {
 
+    SetName(name + " Module");
     ConfigureDriveMotor();
     ConfigureTurningMotor();
     ResetEncoders();
@@ -67,23 +70,31 @@ frc::SwerveModuleState SwerveModule::GetState() {
 
 void SwerveModule::SetDesiredState(const frc::SwerveModuleState& desiredState) {
     const auto state = frc::SwerveModuleState::Optimize(desiredState, GetState().angle);
+    currentSimState = state;
+
+    double driveTicks = ConvertSwerveModuleSpeedToTalonTickVel(
+        state.speed, 
+        constants::physical_constants::SWERVE_DRIVE_WHEEL_RADIUS,
+        constants::encoder_info::CTRE_ENCODER_CPR,
+        constants::physical_constants::SWERVE_DRIVE_MOTOR_GEARING
+    );
+
+    double turnTicks = ConvertSwerveModuleAngleToTalonTicks(
+        state.angle.Radians(),
+        constants::encoder_info::CTRE_ENCODER_CPR,
+        constants::physical_constants::SWERVE_TURNING_MOTOR_GEARING
+    );
+
+    frc::SmartDashboard::PutNumber(moduleName + " Drive Ticks", driveTicks);
+    frc::SmartDashboard::PutNumber(moduleName + " Module Angle Ticks", turnTicks);
 
     driveMotor.Set(
-        ctre::phoenix::motorcontrol::ControlMode::Velocity, 
-        ConvertSwerveModuleSpeedToTalonTickVel(
-            state.speed, 
-            constants::physical_constants::SWERVE_DRIVE_WHEEL_RADIUS,
-            constants::encoder_info::CTRE_ENCODER_CPR,
-            constants::physical_constants::SWERVE_DRIVE_MOTOR_GEARING
-        )
+        ctre::phoenix::motorcontrol::ControlMode::Velocity,
+        driveTicks
     );
     turningMotor.Set(
         ctre::phoenix::motorcontrol::ControlMode::Position,
-        ConvertSwerveModuleAngleToTalonTicks(
-            state.angle.Radians(),
-            constants::encoder_info::CTRE_ENCODER_CPR,
-            constants::physical_constants::SWERVE_TURNING_MOTOR_GEARING
-        )
+        turnTicks
     );
 }
 
@@ -115,41 +126,31 @@ double SwerveModule::ConvertSwerveModuleAngleToTalonTicks(units::radian_t angle,
 
 void SwerveModule::SimulationPeriodic() {
 
-    double turnMotorVoltage = turningMotor.GetMotorOutputVoltage();
-
-    turningMotorSim.SetInputVoltage(units::volt_t{turnMotorVoltage});
-    driveMotorSim.SetInputVoltage(units::volt_t{driveMotor.GetMotorOutputVoltage()});
-    
-    turningMotorSim.Update(20_ms);
-    driveMotorSim.Update(20_ms);
-
-    units::degree_t angle = turningMotorSim.GetAngle();
-    units::revolutions_per_minute_t vel = turningMotorSim.GetVelocity();
+    units::degree_t angle = currentSimState.angle.Degrees();
+    units::radians_per_second_t vel = Util::ConvertLinearVelocityToAngularVelocity(currentSimState.speed, constants::physical_constants::SWERVE_DRIVE_WHEEL_RADIUS);
 
     int turningTicks = Util::ConvertAngleToEncoderTicks(
             angle,
             constants::encoder_info::CTRE_ENCODER_CPR,
             constants::physical_constants::SWERVE_TURNING_MOTOR_GEARING
-        );
-
-    int turningVelTicks = Util::ConvertAngularVelocityToTicksPer100Ms(
-            vel,
-            constants::encoder_info::CTRE_ENCODER_CPR,
-            constants::physical_constants::SWERVE_TURNING_MOTOR_GEARING
-        );
+    );
 
     turningMotor.GetSimCollection().SetQuadratureRawPosition(
         turningTicks
     );
-    turningMotor.GetSimCollection().SetQuadratureVelocity(
-        turningVelTicks
-    );
 
     driveMotor.GetSimCollection().SetQuadratureVelocity(
         Util::ConvertAngularVelocityToTicksPer100Ms(
-            driveMotorSim.GetAngularVelocity(),
+            vel,
             constants::encoder_info::CTRE_ENCODER_CPR,
             constants::physical_constants::SWERVE_DRIVE_MOTOR_GEARING
         )
     );
+}
+
+void SwerveModule::InitSendable(frc::SendableBuilder& builder) {
+    builder.SetSmartDashboardType("SwerveModule");
+    builder.SetActuator(true);
+    builder.AddDoubleProperty("angle", [=]() { return GetState().angle.Degrees().to<double>(); }, nullptr);
+    builder.AddDoubleProperty("speed", [=]() { return GetState().speed.to<double>(); }, nullptr);
 }
