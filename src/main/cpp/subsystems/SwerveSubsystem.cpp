@@ -90,5 +90,5 @@ void SwerveSubsystem::SimulationPeriodic() {
 
     HAL_SimDeviceHandle gyroSimHandle = HALSIM_GetSimDeviceHandle("navX-Sensor[4]");
     hal::SimDouble angle = HALSIM_GetSimValueHandle(gyroSimHandle, "Yaw");
-    angle.Set(-0);
+    angle.Set(-odometry.GetPose().Rotation().Degrees().to<double>());
 }
