@@ -22,10 +22,12 @@ public:
     void ResetEncoders();
     static double ConvertSwerveModuleSpeedToTalonTickVel(units::meters_per_second_t speed, units::meter_t wheelRadius, int encoderCPR, double gearing);
     static double ConvertSwerveModuleAngleToTalonTicks(units::radian_t angle, int encoderCPR, double gearing);
+    static frc::SwerveModuleState Optimize(const frc::SwerveModuleState& desiredState, const frc::Rotation2d& currentAngle);
     void InitSendable(frc::SendableBuilder& builder) override;
 private:
     void ConfigureTurningMotor();
     void ConfigureDriveMotor();
+    static units::degree_t PlaceInAppropriate0to360Scope(units::degree_t scopeReference, units::degree_t newAngle);
 
     //TalonFX does not support simulation vars yet
     //ctre::phoenix::motorcontrol::can::WPI_TalonFX driveMotor;

@@ -69,7 +69,7 @@ frc::SwerveModuleState SwerveModule::GetState() {
 }
 
 void SwerveModule::SetDesiredState(const frc::SwerveModuleState& desiredState) {
-    const auto state = frc::SwerveModuleState::Optimize(desiredState, GetState().angle);
+    const auto state = Optimize(desiredState, GetState().angle);
     currentSimState = state;
 
     double driveTicks = ConvertSwerveModuleSpeedToTalonTickVel(
@@ -120,8 +120,48 @@ double SwerveModule::ConvertSwerveModuleAngleToTalonTicks(units::radian_t angle,
     return Util::ConvertAngleToEncoderTicks(
         angle,
         encoderCPR,
-        gearing
+        gearing,
+        false
     );
+}
+
+units::degree_t SwerveModule::PlaceInAppropriate0to360Scope(units::degree_t scopeReference, units::degree_t newAngle) {
+    units::degree_t lowerBound;
+    units::degree_t upperBound;
+    units::degree_t lowerOffset = units::math::fmod(scopeReference, 360_deg);
+    if (lowerOffset >= 0_deg) {
+        lowerBound = scopeReference - lowerOffset;
+        upperBound = scopeReference + (360_deg - lowerOffset);
+    } else {
+        upperBound = scopeReference - lowerOffset;
+        lowerBound = scopeReference - (360_deg + lowerOffset);
+    }
+    while (newAngle < lowerBound) {
+        newAngle += 360_deg;
+    }
+    while (newAngle > upperBound) {
+        newAngle -= 360_deg;
+    }
+    if (newAngle - scopeReference > 180_deg) {
+        newAngle -= 360_deg;
+    } else if (newAngle - scopeReference < -180_deg) {
+        newAngle += 360_deg;
+    }
+    return newAngle;
+}
+
+frc::SwerveModuleState SwerveModule::Optimize(const frc::SwerveModuleState& desiredState, const frc::Rotation2d& currentAngle) {
+    units::degree_t targetAngle = SwerveModule::PlaceInAppropriate0to360Scope(currentAngle.Degrees(), desiredState.angle.Degrees());
+    units::meters_per_second_t targetSpeed = desiredState.speed;
+    units::degree_t delta = targetAngle - currentAngle.Degrees();
+    if (units::math::abs(delta) > 90_deg) {
+        targetSpeed = -targetSpeed;
+        targetAngle = delta > 90_deg ? (targetAngle -= 180_deg) : (targetAngle += 180_deg);
+    }
+    frc::SwerveModuleState retVal;
+    retVal.speed = targetSpeed;
+    retVal.angle = targetAngle;
+    return retVal;
 }
 
 void SwerveModule::SimulationPeriodic() {
