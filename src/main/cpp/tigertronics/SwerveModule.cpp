@@ -51,6 +51,15 @@ void SwerveModule::ConfigureDriveMotor() {
 }
 
 frc::SwerveModuleState SwerveModule::GetState() {
+    double currentEncoderPos = turningMotor.GetSelectedSensorPosition();
+
+    unwrappedAngle = Util::ConvertTicksToAngle(
+        currentEncoderPos,
+        constants::encoder_info::CTRE_ENCODER_CPR,
+        constants::physical_constants::SWERVE_TURNING_MOTOR_GEARING,
+        false
+    );
+
     return {
         Util::ConvertAngularVelocityToLinearVelocity(
             Util::ConvertTicksPer100MsToAngularVelocity (
@@ -61,7 +70,7 @@ frc::SwerveModuleState SwerveModule::GetState() {
             constants::physical_constants::SWERVE_DRIVE_WHEEL_RADIUS
         ),
         frc::Rotation2d(Util::ConvertTicksToAngle(
-            turningMotor.GetSelectedSensorPosition(),
+            currentEncoderPos,
             constants::encoder_info::CTRE_ENCODER_CPR,
             constants::physical_constants::SWERVE_TURNING_MOTOR_GEARING
         ))
@@ -69,7 +78,7 @@ frc::SwerveModuleState SwerveModule::GetState() {
 }
 
 void SwerveModule::SetDesiredState(const frc::SwerveModuleState& desiredState) {
-    const auto state = Optimize(desiredState, GetState().angle);
+    const auto state = frc::SwerveModuleState::Optimize(desiredState, GetState().angle);
     currentSimState = state;
 
     double driveTicks = ConvertSwerveModuleSpeedToTalonTickVel(
@@ -80,11 +89,12 @@ void SwerveModule::SetDesiredState(const frc::SwerveModuleState& desiredState) {
     );
 
     double turnTicks = ConvertSwerveModuleAngleToTalonTicks(
-        state.angle.Radians(),
+        PlaceInAppropriate0to360Scope(unwrappedAngle, state.angle.Radians()),
         constants::encoder_info::CTRE_ENCODER_CPR,
         constants::physical_constants::SWERVE_TURNING_MOTOR_GEARING
     );
 
+    frc::SmartDashboard::PutNumber(moduleName + " Setpoint Deg", state.angle.Degrees().to<double>());
     frc::SmartDashboard::PutNumber(moduleName + " Drive Ticks", driveTicks);
     frc::SmartDashboard::PutNumber(moduleName + " Module Angle Ticks", turnTicks);
 
@@ -125,43 +135,29 @@ double SwerveModule::ConvertSwerveModuleAngleToTalonTicks(units::radian_t angle,
     );
 }
 
-units::degree_t SwerveModule::PlaceInAppropriate0to360Scope(units::degree_t scopeReference, units::degree_t newAngle) {
-    units::degree_t lowerBound;
-    units::degree_t upperBound;
-    units::degree_t lowerOffset = units::math::fmod(scopeReference, 360_deg);
+units::radian_t SwerveModule::PlaceInAppropriate0to360Scope(units::radian_t scopeReference, units::radian_t newAngle) {
+    units::radian_t lowerBound;
+    units::radian_t upperBound;
+    units::radian_t lowerOffset = units::math::fmod(scopeReference, 2_rad * wpi::math::pi);
     if (lowerOffset >= 0_deg) {
         lowerBound = scopeReference - lowerOffset;
-        upperBound = scopeReference + (360_deg - lowerOffset);
+        upperBound = scopeReference + ((2_rad * wpi::math::pi) - lowerOffset);
     } else {
         upperBound = scopeReference - lowerOffset;
-        lowerBound = scopeReference - (360_deg + lowerOffset);
+        lowerBound = scopeReference - ((2_rad * wpi::math::pi) + lowerOffset);
     }
     while (newAngle < lowerBound) {
-        newAngle += 360_deg;
+        newAngle += (2_rad * wpi::math::pi);
     }
     while (newAngle > upperBound) {
-        newAngle -= 360_deg;
+        newAngle -= (2_rad * wpi::math::pi);
     }
-    if (newAngle - scopeReference > 180_deg) {
-        newAngle -= 360_deg;
-    } else if (newAngle - scopeReference < -180_deg) {
-        newAngle += 360_deg;
+    if (newAngle - scopeReference > (1_rad * wpi::math::pi)) {
+        newAngle -= (2_rad * wpi::math::pi);
+    } else if (newAngle - scopeReference < -(1_rad * wpi::math::pi)) {
+        newAngle += (2_rad * wpi::math::pi);
     }
     return newAngle;
-}
-
-frc::SwerveModuleState SwerveModule::Optimize(const frc::SwerveModuleState& desiredState, const frc::Rotation2d& currentAngle) {
-    units::degree_t targetAngle = SwerveModule::PlaceInAppropriate0to360Scope(currentAngle.Degrees(), desiredState.angle.Degrees());
-    units::meters_per_second_t targetSpeed = desiredState.speed;
-    units::degree_t delta = targetAngle - currentAngle.Degrees();
-    if (units::math::abs(delta) > 90_deg) {
-        targetSpeed = -targetSpeed;
-        targetAngle = delta > 90_deg ? (targetAngle -= 180_deg) : (targetAngle += 180_deg);
-    }
-    frc::SwerveModuleState retVal;
-    retVal.speed = targetSpeed;
-    retVal.angle = targetAngle;
-    return retVal;
 }
 
 void SwerveModule::SimulationPeriodic() {
