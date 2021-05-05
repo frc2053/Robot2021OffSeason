@@ -8,6 +8,7 @@ protected:
     int encoderTicksPerRev = 4096;
     double gearing = 1.0;
     units::meter_t wheelRadius = 1_m;
+    SwerveModule testModule{1, 2, 0, "TEST"};
 };
 
 TEST_F(SwerveModuleTests, SwerveStateZero) {
@@ -23,3 +24,10 @@ TEST_F(SwerveModuleTests, SwerveStateSimple) {
     EXPECT_DOUBLE_EQ(512, actualAngle);
     EXPECT_DOUBLE_EQ(409.6, actualSpeed);
 };
+
+TEST_F(SwerveModuleTests, SwerveModuleTickSetpoint) {
+    testModule.ResetEncoders();
+    testModule.OverrideAngleEncoderValues(5120);
+    const auto state = testModule.GetState();
+    EXPECT_DOUBLE_EQ(state.angle.Degrees().to<double>(), 45);
+}

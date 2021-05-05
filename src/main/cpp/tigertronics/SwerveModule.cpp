@@ -111,6 +111,11 @@ void SwerveModule::SetDesiredState(const frc::SwerveModuleState& desiredState) {
     );
 }
 
+void SwerveModule::OverrideAngleEncoderValues(double turnEncVal) {
+    turningMotor.GetSensorCollection().SetQuadraturePosition(turnEncVal);
+    turningMotor.GetSimCollection().SetQuadratureRawPosition(turnEncVal);
+}
+
 void SwerveModule::ResetEncoders() {
     turningMotor.GetSimCollection().SetQuadratureRawPosition(0);
     driveMotor.GetSimCollection().SetQuadratureRawPosition(0);
