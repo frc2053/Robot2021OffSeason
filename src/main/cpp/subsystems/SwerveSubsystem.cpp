@@ -40,11 +40,6 @@ void SwerveSubsystem::Drive(units::meters_per_second_t xSpeed, units::meters_per
 
     auto [fl, fr, bl, br] = states;
 
-    logger->info("fl[{:.2f},{:.2f}]",
-        fl.angle.Degrees().to<double>(),
-        fl.speed.to<double>()
-    );
-
     frontLeftModule->SetDesiredState(fl);
     frontRightModule->SetDesiredState(fr);
     backLeftModule->SetDesiredState(bl);

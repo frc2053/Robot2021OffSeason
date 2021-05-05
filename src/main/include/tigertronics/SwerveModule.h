@@ -57,6 +57,4 @@ private:
     };
 
     std::shared_ptr<spdlog::logger> logger;
-    //please dont use
-    frc::SwerveModuleState currentSimState;
 };
