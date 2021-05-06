@@ -83,19 +83,11 @@ frc::SwerveModuleState SwerveModule::GetState() {
 
 void SwerveModule::SetDesiredState(const frc::SwerveModuleState& desiredState) {
     const auto state = frc::SwerveModuleState::Optimize(desiredState, GetState().angle);
+    currentSimState = state;
 
-    double driveTicks = ConvertSwerveModuleSpeedToTalonTickVel(
-        state.speed, 
-        constants::physical_constants::SWERVE_DRIVE_WHEEL_RADIUS,
-        constants::encoder_info::CTRE_ENCODER_CPR,
-        constants::physical_constants::SWERVE_DRIVE_MOTOR_GEARING
-    );
+    double driveTicks = ConvertSwerveModuleSpeedToTalonTickVel(state.speed);
 
-    double turnTicks = ConvertSwerveModuleAngleToTalonTicks(
-        PlaceInAppropriate0to360Scope(unwrappedAngle, state.angle.Radians()),
-        constants::encoder_info::CTRE_ENCODER_CPR,
-        constants::physical_constants::SWERVE_TURNING_MOTOR_GEARING
-    );
+    double turnTicks = ConvertSwerveModuleAngleToTalonTicks(PlaceInAppropriate0to360Scope(unwrappedAngle, state.angle.Radians()));
 
     frc::SmartDashboard::PutNumber(moduleName + " Setpoint Deg", state.angle.Degrees().to<double>());
     frc::SmartDashboard::PutNumber(moduleName + " Drive Ticks", driveTicks);
@@ -123,22 +115,26 @@ void SwerveModule::ResetEncoders() {
     driveMotor.SetSelectedSensorPosition(0);
 }
 
-double SwerveModule::ConvertSwerveModuleSpeedToTalonTickVel(units::meters_per_second_t speed, units::meter_t wheelRadius, int encoderCPR, double gearing) {
+double SwerveModule::ConvertSwerveModuleSpeedToTalonTickVel(units::meters_per_second_t speed) {
     return Util::ConvertAngularVelocityToTicksPer100Ms(
         Util::ConvertLinearVelocityToAngularVelocity(
             speed,
-            wheelRadius
+            constants::physical_constants::SWERVE_DRIVE_WHEEL_RADIUS
         ),
-        encoderCPR,
-        gearing
+        constants::encoder_info::CTRE_ENCODER_CPR,
+        constants::physical_constants::SWERVE_DRIVE_MOTOR_GEARING
     );
 }
 
-double SwerveModule::ConvertSwerveModuleAngleToTalonTicks(units::radian_t angle, int encoderCPR, double gearing) {
+units::radian_t SwerveModule::GetCurrentUnwrappedAngle() {
+    return unwrappedAngle;
+}
+
+double SwerveModule::ConvertSwerveModuleAngleToTalonTicks(units::radian_t angle) {
     return Util::ConvertAngleToEncoderTicks(
         angle,
-        encoderCPR,
-        gearing,
+        constants::encoder_info::CTRE_ENCODER_CPR,
+        constants::physical_constants::SWERVE_TURNING_MOTOR_GEARING,
         false
     );
 }
@@ -170,39 +166,17 @@ units::radian_t SwerveModule::PlaceInAppropriate0to360Scope(units::radian_t scop
 
 void SwerveModule::SimulationPeriodic() {
 
-    double turnMotorVoltage = turningMotor.GetMotorOutputVoltage();
+    units::radians_per_second_t vel = Util::ConvertLinearVelocityToAngularVelocity(currentSimState.speed, constants::physical_constants::SWERVE_DRIVE_WHEEL_RADIUS);
 
-    turningMotorSim.SetInputVoltage(units::volt_t{turnMotorVoltage});
-    driveMotorSim.SetInputVoltage(units::volt_t{driveMotor.GetMotorOutputVoltage()});
-    
-    turningMotorSim.Update(20_ms);
-    driveMotorSim.Update(20_ms);
-
-    units::degree_t angle = turningMotorSim.GetAngle();
-    units::revolutions_per_minute_t vel = turningMotorSim.GetVelocity();
-
-    int turningTicks = Util::ConvertAngleToEncoderTicks(
-            angle,
-            constants::encoder_info::CTRE_ENCODER_CPR,
-            constants::physical_constants::SWERVE_TURNING_MOTOR_GEARING
-        );
-
-    int turningVelTicks = Util::ConvertAngularVelocityToTicksPer100Ms(
-            vel,
-            constants::encoder_info::CTRE_ENCODER_CPR,
-            constants::physical_constants::SWERVE_TURNING_MOTOR_GEARING
-        );
+    int turningTicks = ConvertSwerveModuleAngleToTalonTicks(PlaceInAppropriate0to360Scope(unwrappedAngle, currentSimState.angle.Radians()));
 
     turningMotor.GetSimCollection().SetQuadratureRawPosition(
         turningTicks
     );
-    turningMotor.GetSimCollection().SetQuadratureVelocity(
-        turningVelTicks
-    );
 
     driveMotor.GetSimCollection().SetQuadratureVelocity(
         Util::ConvertAngularVelocityToTicksPer100Ms(
-            driveMotorSim.GetAngularVelocity(),
+            vel,
             constants::encoder_info::CTRE_ENCODER_CPR,
             constants::physical_constants::SWERVE_DRIVE_MOTOR_GEARING
         )
