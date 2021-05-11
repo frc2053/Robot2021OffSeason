@@ -11,6 +11,7 @@
 #include <spdlog/spdlog.h>
 #include <frc/smartdashboard/Sendable.h>
 #include <frc/smartdashboard/SendableHelper.h>
+#include <frc/geometry/Rotation2d.h>
 
 class SwerveModule : public frc::Sendable,
                      public frc::SendableHelper<SwerveModule> {
@@ -59,5 +60,5 @@ private:
     };
 
     std::shared_ptr<spdlog::logger> logger;
-    frc::SwerveModuleState currentSimState;
+    frc::SwerveModuleState currentSimState{0_mps, frc::Rotation2d{0_deg}};
 };

@@ -69,9 +69,9 @@ namespace constants {
     namespace drivetrain_motor_config {
         units::degree_t constexpr SWERVE_ALLOWABLE_TURN_ERROR = 2_deg;
         units::ampere_t constexpr SWERVE_TURN_CURRENT_LIMIT = 10_A;
-        int constexpr FL_SWERVE_TURN_MOTOR_CALIBRATION_VALUE = 0;
-        int constexpr FR_SWERVE_TURN_MOTOR_CALIBRATION_VALUE = 10;
-        int constexpr BL_SWERVE_TURN_MOTOR_CALIBRATION_VALUE = 20;
-        int constexpr BR_SWERVE_TURN_MOTOR_CALIBRATION_VALUE = 30;
+        int constexpr FL_SWERVE_TURN_MOTOR_CALIBRATION_VALUE = 4000;
+        int constexpr FR_SWERVE_TURN_MOTOR_CALIBRATION_VALUE = 1024;
+        int constexpr BL_SWERVE_TURN_MOTOR_CALIBRATION_VALUE = 2048;
+        int constexpr BR_SWERVE_TURN_MOTOR_CALIBRATION_VALUE = 3000;
     }
 }
