@@ -35,7 +35,6 @@ void SwerveModule::ConfigureTurningMotor() {
         10);
     turningMotor.ConfigPeakCurrentLimit(0, 10);
     turningMotor.ConfigContinuousCurrentLimit(constants::drivetrain_motor_config::SWERVE_TURN_CURRENT_LIMIT.to<int>(), 10);
-    turningMotor.GetSensorCollection().SyncQuadratureWithPulseWidth(0, 0, true, turningMotorOffsetTicks, 10);
 }
 
 void SwerveModule::ConfigureDriveMotor() {
@@ -60,10 +59,6 @@ frc::SwerveModuleState SwerveModule::GetState() {
         false
     );
 
-    if(moduleName == "FL") {
-        logger->info("fl unwrappedAngle: {}", unwrappedAngle.to<double>());
-    }
-
     return {
         Util::ConvertAngularVelocityToLinearVelocity(
             Util::ConvertTicksPer100MsToAngularVelocity (
@@ -86,7 +81,6 @@ void SwerveModule::SetDesiredState(const frc::SwerveModuleState& desiredState) {
     currentSimState = state;
 
     double driveTicks = ConvertSwerveModuleSpeedToTalonTickVel(state.speed);
-
     double turnTicks = ConvertSwerveModuleAngleToTalonTicks(PlaceInAppropriate0to360Scope(unwrappedAngle, state.angle.Radians()));
 
     frc::SmartDashboard::PutNumber(moduleName + " Setpoint Deg", state.angle.Degrees().to<double>());
@@ -101,6 +95,9 @@ void SwerveModule::SetDesiredState(const frc::SwerveModuleState& desiredState) {
         ctre::phoenix::motorcontrol::ControlMode::Position,
         turnTicks
     );
+
+    turningMotor.GetSimCollection().SetQuadratureRawPosition(turnTicks);
+    driveMotor.GetSimCollection().SetQuadratureVelocity(driveTicks);
 }
 
 void SwerveModule::OverrideAngleEncoderValues(double turnEncVal) {
@@ -113,6 +110,26 @@ void SwerveModule::ResetEncoders() {
     driveMotor.GetSimCollection().SetQuadratureRawPosition(0);
     turningMotor.SetSelectedSensorPosition(0);
     driveMotor.SetSelectedSensorPosition(0);
+
+    
+    if(moduleName == "FL") {
+        turningMotor.GetSimCollection().SetPulseWidthPosition(4000);
+    }
+    if(moduleName == "FR") {
+        turningMotor.GetSimCollection().SetPulseWidthPosition(1024);
+    }
+    if(moduleName == "BL") {
+        turningMotor.GetSimCollection().SetPulseWidthPosition(2048);
+    }
+    if(moduleName == "BR") {
+        turningMotor.GetSimCollection().SetPulseWidthPosition(3000);
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
+    logger->info("Pulse Width Pos: {} Quad Pos: {}", turningMotor.GetSensorCollection().GetPulseWidthPosition(), turningMotor.GetSelectedSensorPosition());
+    turningMotor.GetSensorCollection().SyncQuadratureWithPulseWidth(0, 0, true, 0, 10);
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    logger->info("Pulse Width Pos: {} Quad Pos: {}", turningMotor.GetSensorCollection().GetPulseWidthPosition(), turningMotor.GetSelectedSensorPosition());
 }
 
 double SwerveModule::ConvertSwerveModuleSpeedToTalonTickVel(units::meters_per_second_t speed) {
@@ -143,6 +160,7 @@ units::radian_t SwerveModule::PlaceInAppropriate0to360Scope(units::radian_t scop
     units::radian_t lowerBound;
     units::radian_t upperBound;
     units::radian_t lowerOffset = units::math::fmod(scopeReference, 2_rad * wpi::math::pi);
+    units::radian_t retVal = newAngle;
     if (lowerOffset >= 0_deg) {
         lowerBound = scopeReference - lowerOffset;
         upperBound = scopeReference + ((2_rad * wpi::math::pi) - lowerOffset);
@@ -150,37 +168,22 @@ units::radian_t SwerveModule::PlaceInAppropriate0to360Scope(units::radian_t scop
         upperBound = scopeReference - lowerOffset;
         lowerBound = scopeReference - ((2_rad * wpi::math::pi) + lowerOffset);
     }
-    while (newAngle < lowerBound) {
-        newAngle += (2_rad * wpi::math::pi);
+    while (retVal < lowerBound) {
+        retVal = retVal + (2_rad * wpi::math::pi);
     }
-    while (newAngle > upperBound) {
-        newAngle -= (2_rad * wpi::math::pi);
+    while (retVal > upperBound) {
+        retVal = retVal - (2_rad * wpi::math::pi);
     }
-    if (newAngle - scopeReference > (1_rad * wpi::math::pi)) {
-        newAngle -= (2_rad * wpi::math::pi);
-    } else if (newAngle - scopeReference < -(1_rad * wpi::math::pi)) {
-        newAngle += (2_rad * wpi::math::pi);
+    if (retVal - scopeReference > (1_rad * wpi::math::pi)) {
+        retVal = retVal - (2_rad * wpi::math::pi);
+    } else if (retVal - scopeReference < -(1_rad * wpi::math::pi)) {
+        retVal = retVal + (2_rad * wpi::math::pi);
     }
-    return newAngle;
+    return retVal;
 }
 
 void SwerveModule::SimulationPeriodic() {
 
-    units::radians_per_second_t vel = Util::ConvertLinearVelocityToAngularVelocity(currentSimState.speed, constants::physical_constants::SWERVE_DRIVE_WHEEL_RADIUS);
-
-    int turningTicks = ConvertSwerveModuleAngleToTalonTicks(PlaceInAppropriate0to360Scope(unwrappedAngle, currentSimState.angle.Radians()));
-
-    turningMotor.GetSimCollection().SetQuadratureRawPosition(
-        turningTicks
-    );
-
-    driveMotor.GetSimCollection().SetQuadratureVelocity(
-        Util::ConvertAngularVelocityToTicksPer100Ms(
-            vel,
-            constants::encoder_info::CTRE_ENCODER_CPR,
-            constants::physical_constants::SWERVE_DRIVE_MOTOR_GEARING
-        )
-    );
 }
 
 void SwerveModule::InitSendable(frc::SendableBuilder& builder) {
